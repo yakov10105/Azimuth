@@ -28,3 +28,4 @@ vendor/
 # Project-specific (not for public repo)
 PRD.md
 .claude/
+doc/
