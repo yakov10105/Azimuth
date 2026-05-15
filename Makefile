@@ -1,7 +1,7 @@
 .PHONY: build test lint run infra-up infra-down infra-reset db-migrate health test-integration benchmark
 
 build:
-	go build -o ./bin/navigator ./cmd/navigator
+	go build -o ./bin/zm ./cmd/zm
 
 test:
 	go test ./internal/... ./cmd/...
@@ -13,7 +13,7 @@ lint:
 	golangci-lint run ./...
 
 run:
-	go run ./cmd/navigator
+	go run ./cmd/zm
 
 infra-up:
 	docker compose up -d --wait

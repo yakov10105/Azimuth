@@ -1,10 +1,10 @@
-# Project Navigator
+# Azimuth
 
 An AI-native developer tool that treats your codebase as a Living Knowledge Graph — answering "How", "Where", and "Why" questions using AST structure, call graphs, and Git history.
 
 ## Prerequisites
 
-- Go 1.22+
+- Go 1.23+
 - Docker + Docker Compose
 - `golangci-lint` v1.59+
 
@@ -16,14 +16,14 @@ cp .env.example .env
 
 make infra-up
 make build
-./bin/navigator --help
+./bin/zm --help
 ```
 
 ## Make Targets
 
 | Target | Description |
 |---|---|
-| `make build` | Compile the navigator binary to `./bin/navigator` |
+| `make build` | Compile the zm binary to `./bin/zm` |
 | `make test` | Run unit tests |
 | `make test-integration` | Run integration tests (requires running infra) |
 | `make lint` | Run golangci-lint |

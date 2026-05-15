@@ -13,7 +13,7 @@ import (
 func requiredEnv(t *testing.T) {
 	t.Helper()
 	t.Setenv("NEO4J_PASSWORD", "testpass")
-	t.Setenv("POSTGRES_DSN", "postgresql://navigator:testpass@localhost:5432/navigator")
+	t.Setenv("POSTGRES_DSN", "postgresql://azimuth:testpass@localhost:5432/azimuth")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-ant-test")
 }
 
@@ -36,7 +36,7 @@ func TestLoad_Defaults(t *testing.T) {
 }
 
 func TestLoad_MissingPassword(t *testing.T) {
-	t.Setenv("POSTGRES_DSN", "postgresql://navigator:testpass@localhost:5432/navigator")
+	t.Setenv("POSTGRES_DSN", "postgresql://azimuth:testpass@localhost:5432/azimuth")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-ant-test")
 
 	_, err := Load("")
@@ -55,7 +55,7 @@ func TestLoad_MissingDSN(t *testing.T) {
 
 func TestLoad_MissingAPIKey(t *testing.T) {
 	t.Setenv("NEO4J_PASSWORD", "testpass")
-	t.Setenv("POSTGRES_DSN", "postgresql://navigator:testpass@localhost:5432/navigator")
+	t.Setenv("POSTGRES_DSN", "postgresql://azimuth:testpass@localhost:5432/azimuth")
 
 	_, err := Load("")
 	require.Error(t, err)

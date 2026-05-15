@@ -35,13 +35,13 @@ jobs:
       postgres:
         image: postgres:16.2-alpine
         env:
-          POSTGRES_USER: navigator
+          POSTGRES_USER: azimuth
           POSTGRES_PASSWORD: testpassword
-          POSTGRES_DB: navigator
+          POSTGRES_DB: azimuth
         ports:
           - "5432:5432"
         options: >-
-          --health-cmd "pg_isready -U navigator"
+          --health-cmd "pg_isready -U azimuth"
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
@@ -74,4 +74,4 @@ jobs:
           NEO4J_USER: neo4j
           NEO4J_PASSWORD: testpassword
           QDRANT_URL: http://localhost:6333
-          POSTGRES_DSN: postgresql://navigator:testpassword@localhost:5432/navigator
+          POSTGRES_DSN: postgresql://azimuth:testpassword@localhost:5432/azimuth

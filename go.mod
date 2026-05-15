@@ -1,4 +1,4 @@
-module github.com/navigator/navigator
+module github.com/azimuth/azimuth
 
 go 1.23.0
 

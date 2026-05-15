@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config holds all runtime configuration for Navigator.
+// Config holds all runtime configuration for Azimuth.
 type Config struct {
 	Neo4j    Neo4jConfig
 	Qdrant   QdrantConfig

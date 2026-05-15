@@ -12,7 +12,7 @@ curl -sf "http://localhost:7474" > /dev/null && ok "Neo4j HTTP" || fail "Neo4j n
 curl -sf "http://localhost:6333/healthz" > /dev/null && ok "Qdrant" || fail "Qdrant not reachable at http://localhost:6333"
 
 # PostgreSQL
-pg_isready -h localhost -U "${POSTGRES_USER:-navigator}" && ok "PostgreSQL" || fail "PostgreSQL not reachable at localhost:5432"
+pg_isready -h localhost -U "${POSTGRES_USER:-azimuth}" && ok "PostgreSQL" || fail "PostgreSQL not reachable at localhost:5432"
 
 echo ""
 echo "All systems operational."
