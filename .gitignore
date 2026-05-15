@@ -1,0 +1,30 @@
+# Secrets
+.env
+
+# Build artifacts
+bin/
+*.exe
+*.test
+coverage.out
+
+# Database volumes (docker named volumes are external, but bind-mount dirs if any)
+docker-volumes/
+*.db
+*.sqlite
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+vendor/
+
+# Project-specific (not for public repo)
+PRD.md
+.claude/
