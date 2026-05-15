@@ -10,7 +10,8 @@ type GoFile struct {
 	Methods    []GoFunction // methods (Receiver is set)
 	Structs    []GoStruct
 	Interfaces []GoInterface
-	HasErrors  bool // true if tree-sitter detected syntax errors; extraction still proceeds
+	Calls      []GoCallSite // call expressions found in function/method bodies
+	HasErrors  bool         // true if go/parser detected syntax errors; extraction still proceeds
 }
 
 // GoFunction represents a top-level function or a method declaration.

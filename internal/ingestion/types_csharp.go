@@ -7,6 +7,7 @@ type CSharpFile struct {
 	Usings     []CSharpUsing
 	Classes    []CSharpClass
 	Interfaces []CSharpInterface
+	Calls      []CSharpCallSite // call expressions found in method bodies
 	HasErrors  bool
 }
 

@@ -48,13 +48,13 @@ func (p *CSharpParser) ParseBytes(path string, src []byte) (*CSharpFile, error) 
 		file.HasErrors = true
 	}
 
-	p.walkCompilationUnit(root, src, file)
+	p.walkCompilationUnit(root, src, file, path)
 	return file, nil
 }
 
 // --- tree walkers ---
 
-func (p *CSharpParser) walkCompilationUnit(root *sitter.Node, src []byte, file *CSharpFile) {
+func (p *CSharpParser) walkCompilationUnit(root *sitter.Node, src []byte, file *CSharpFile, path string) {
 	var currentNS string
 	nsSet := false
 
@@ -73,7 +73,7 @@ func (p *CSharpParser) walkCompilationUnit(root *sitter.Node, src []byte, file *
 				nsSet = true
 			}
 			if body := child.ChildByFieldName("body"); body != nil {
-				p.walkDeclList(body, src, file, ns)
+				p.walkDeclList(body, src, file, ns, path)
 			}
 		case "file_scoped_namespace_declaration":
 			ns := csNodeText(child.ChildByFieldName("name"), src)
@@ -83,7 +83,7 @@ func (p *CSharpParser) walkCompilationUnit(root *sitter.Node, src []byte, file *
 				nsSet = true
 			}
 		case "class_declaration", "record_declaration", "struct_declaration":
-			file.Classes = append(file.Classes, p.extractClasses(child, src, currentNS)...)
+			file.Classes = append(file.Classes, p.extractClasses(child, src, currentNS, path, file)...)
 		case "interface_declaration":
 			file.Interfaces = append(file.Interfaces, p.extractInterface(child, src, currentNS))
 		}
@@ -91,7 +91,7 @@ func (p *CSharpParser) walkCompilationUnit(root *sitter.Node, src []byte, file *
 }
 
 // walkDeclList walks the declaration_list that forms a namespace body.
-func (p *CSharpParser) walkDeclList(body *sitter.Node, src []byte, file *CSharpFile, ns string) {
+func (p *CSharpParser) walkDeclList(body *sitter.Node, src []byte, file *CSharpFile, ns, path string) {
 	for i := 0; i < int(body.ChildCount()); i++ {
 		child := body.Child(i)
 		if child == nil || child.IsNull() {
@@ -99,7 +99,7 @@ func (p *CSharpParser) walkDeclList(body *sitter.Node, src []byte, file *CSharpF
 		}
 		switch child.Type() {
 		case "class_declaration", "record_declaration", "struct_declaration":
-			file.Classes = append(file.Classes, p.extractClasses(child, src, ns)...)
+			file.Classes = append(file.Classes, p.extractClasses(child, src, ns, path, file)...)
 		case "interface_declaration":
 			file.Interfaces = append(file.Interfaces, p.extractInterface(child, src, ns))
 		}
@@ -108,7 +108,8 @@ func (p *CSharpParser) walkDeclList(body *sitter.Node, src []byte, file *CSharpF
 
 // extractClasses extracts a class (or record/struct) declaration and any nested classes.
 // Returns a flat slice: the outer class at index 0, then any nested classes.
-func (p *CSharpParser) extractClasses(n *sitter.Node, src []byte, ns string) []CSharpClass {
+// Call sites found in method bodies are appended directly to file.Calls.
+func (p *CSharpParser) extractClasses(n *sitter.Node, src []byte, ns, path string, file *CSharpFile) []CSharpClass {
 	cls := CSharpClass{Namespace: ns}
 	var nested []CSharpClass
 
@@ -165,11 +166,20 @@ func (p *CSharpParser) extractClasses(n *sitter.Node, src []byte, ns string) []C
 			}
 			switch child.Type() {
 			case "method_declaration":
-				cls.Methods = append(cls.Methods, csExtractMethod(child, src))
+				m := csExtractMethod(child, src)
+				cls.Methods = append(cls.Methods, m)
+				// Extract call sites from the method body.
+				if m.Name != "" {
+					methodFQN := buildCSharpFQN(ns, cls.Name, m.Name)
+					if bodyNode := child.ChildByFieldName("body"); bodyNode != nil {
+						sites := extractCSharpCallSites(methodFQN, ns, cls.Name, path, bodyNode, src)
+						file.Calls = append(file.Calls, sites...)
+					}
+				}
 			case "property_declaration":
 				cls.Properties = append(cls.Properties, csExtractProperty(child, src))
 			case "class_declaration", "record_declaration", "struct_declaration":
-				nested = append(nested, p.extractClasses(child, src, ns)...)
+				nested = append(nested, p.extractClasses(child, src, ns, path, file)...)
 			}
 		}
 	}

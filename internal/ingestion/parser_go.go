@@ -61,6 +61,8 @@ func (p *GoParser) ParseBytes(path string, src []byte) (*GoFile, error) {
 		switch d := decl.(type) {
 		case *ast.FuncDecl:
 			fn := extractFuncDecl(d, fset)
+			fqn := buildGoFQN(file.Package, fn.Receiver, fn.Name)
+			file.Calls = append(file.Calls, extractGoCallSites(fqn, file.Package, path, d.Body, fset)...)
 			if d.Recv != nil && len(d.Recv.List) > 0 {
 				file.Methods = append(file.Methods, fn)
 			} else {
