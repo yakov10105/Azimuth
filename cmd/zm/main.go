@@ -5,13 +5,15 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/azimuth/azimuth/internal/cli"
 )
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	_ = ctx
-	// CLI root command wired in Task 1.4
-	os.Exit(0)
+	if err := cli.NewRootCmd().ExecuteContext(ctx); err != nil {
+		os.Exit(1)
+	}
 }

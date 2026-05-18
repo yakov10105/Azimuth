@@ -71,11 +71,32 @@ type parseResult struct {
 	err    error
 }
 
+// PipelineData is the full output of a coordinator run. It includes the
+// summary report plus the raw parsed files and resolved call edges needed
+// by the graph write layer.
+type PipelineData struct {
+	Report      *IngestionReport
+	GoFiles     []*GoFile
+	CSharpFiles []*CSharpFile
+	GoEdges     []CallEdge
+	CSharpEdges []CallEdge
+}
+
 // Run executes the ingestion pipeline against root and returns a report.
 // A non-nil error is returned only for infrastructure failures (e.g. walk
 // cannot open the root directory). Per-file parse errors are collected into
 // report.Errors and never abort the run.
 func (c *Coordinator) Run(ctx context.Context, root string) (*IngestionReport, error) {
+	data, err := c.RunFull(ctx, root)
+	if err != nil {
+		return nil, err
+	}
+	return data.Report, nil
+}
+
+// RunFull executes the ingestion pipeline and returns both the summary report
+// and the raw parsed data needed to build a Neo4j write batch.
+func (c *Coordinator) RunFull(ctx context.Context, root string) (*PipelineData, error) {
 	paths, err := Walk(root, c.cfg.WalkConfig)
 	if err != nil {
 		return nil, fmt.Errorf("coordinator: walk %s: %w", root, err)
@@ -149,7 +170,13 @@ func (c *Coordinator) Run(ctx context.Context, root string) (*IngestionReport, e
 		"errors", len(report.Errors),
 	)
 
-	return report, nil
+	return &PipelineData{
+		Report:      report,
+		GoFiles:     goFiles,
+		CSharpFiles: csFiles,
+		GoEdges:     goEdges,
+		CSharpEdges: csEdges,
+	}, nil
 }
 
 // progressInterval controls how often a progress log line is emitted.

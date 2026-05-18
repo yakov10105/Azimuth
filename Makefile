@@ -1,7 +1,7 @@
 .PHONY: build test lint run infra-up infra-down infra-reset db-migrate health test-integration benchmark
 
 build:
-	go build -o ./bin/zm ./cmd/zm
+	go build -ldflags "-X github.com/azimuth/azimuth/internal/cli.Version=$$(git describe --tags --always --dirty 2>/dev/null || echo dev)" -o ./bin/zm ./cmd/zm
 
 test:
 	go test ./internal/... ./cmd/...
