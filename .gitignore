@@ -25,6 +25,61 @@ Thumbs.db
 # Go
 vendor/
 
+# Python — bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Python — distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+sdist/
+.eggs/
+MANIFEST
+
+# Python — virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env.bak
+.python-version
+
+# Python — test and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.lcov
+nosetests.xml
+test-results/
+
+# Python — type checkers and linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+
+# Python — package managers
+.uv/
+uv.lock
+pip-wheel-metadata/
+Pipfile.lock
+
+# LangChain / LangSmith
+.langchain/
+langchain.db
+
+# Jupyter (if notebooks are ever used for exploration)
+.ipynb_checkpoints/
+*.ipynb
+
 # Project-specific (not for public repo)
 PRD.md
 .claude/
