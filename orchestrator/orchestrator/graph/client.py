@@ -3,7 +3,7 @@ import logging
 from neo4j import AsyncGraphDatabase
 from neo4j.exceptions import ServiceUnavailable  # noqa: F401 — re-exported for callers
 
-from .queries import FIND_BY_NAME, FIND_ENTRY_POINTS
+from .queries import FIND_BY_NAME, FIND_ENTRY_POINTS, GET_SUBGRAPH
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +36,22 @@ class Neo4jReadClient:
             records = await result.data()
             logger.debug("find_entry_points fqns=%d returned %d records", len(fqns), len(records))
             return records
+
+    async def get_subgraph(self, fqn: str, depth: int) -> tuple[list[dict], list[dict]]:
+        """N-hop CALLS/IMPLEMENTS subgraph from root FQN; returns (nodes, edges)."""
+        async with self._driver.session() as session:
+            result = await session.run(GET_SUBGRAPH, {"fqn": fqn, "depth": depth})
+            record = await result.single()
+            if not record:
+                logger.debug("get_subgraph fqn=%r not found", fqn)
+                return [], []
+            nodes = record["nodes"] or []
+            edges = record["edges"] or []
+            logger.debug(
+                "get_subgraph fqn=%r depth=%d nodes=%d edges=%d",
+                fqn, depth, len(nodes), len(edges),
+            )
+            return nodes, edges
 
     async def close(self) -> None:
         await self._driver.close()

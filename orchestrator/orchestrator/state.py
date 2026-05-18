@@ -7,6 +7,7 @@ from typing_extensions import TypedDict
 class AzimuthState(TypedDict):
     # Inputs — set once at graph entry, never mutated
     raw_query: str
+    depth: Optional[int]  # graph traversal depth; defaults to GRAPH_WALKER_DEPTH if None
 
     # Node 1 output
     query_type: Optional[str]   # "WHERE" | "HOW" | "WHY" | "IMPACT"

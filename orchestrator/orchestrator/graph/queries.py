@@ -30,3 +30,26 @@ RETURN n.fqn       AS fqn,
 ORDER BY in_degree DESC
 LIMIT $limit
 """
+
+GET_SUBGRAPH = """
+MATCH (root {fqn: $fqn})
+CALL apoc.path.subgraphAll(root, {
+  relationshipFilter: "CALLS>|IMPLEMENTS>",
+  maxLevel: $depth
+})
+YIELD nodes AS raw_nodes, relationships
+RETURN [n IN raw_nodes | {
+  fqn:        n.fqn,
+  name:       n.name,
+  file_path:  n.file_path,
+  start_line: n.start_line,
+  end_line:   n.end_line,
+  kind:       labels(n)[0],
+  in_degree:  size([(n)<-[:CALLS]-() | 1])
+}] AS nodes,
+[r IN relationships | {
+  from_fqn: startNode(r).fqn,
+  to_fqn:   endNode(r).fqn,
+  type:     type(r)
+}] AS edges
+"""
