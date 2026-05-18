@@ -1,10 +1,6 @@
 package cli
 
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 // IngestOptions holds parsed flags for the ingest command.
 type IngestOptions struct {
@@ -24,9 +20,7 @@ func NewIngestCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.RepoPath = args[0]
-			// Full implementation in Task 1.4.2.
-			fmt.Fprintln(cmd.OutOrStdout(), "ingest: not yet implemented")
-			return nil
+			return runIngest(cmd.Context(), cmd, opts)
 		},
 	}
 

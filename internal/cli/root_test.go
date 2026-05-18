@@ -70,11 +70,11 @@ func TestIngestCmd_TooManyArgs_ReturnsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestIngestCmd_StubOutput_ToStdout(t *testing.T) {
-	stdout, stderr, err := execute("ingest", ".")
-	require.NoError(t, err)
-	assert.Contains(t, stdout, "not yet implemented")
-	assert.Empty(t, stderr, "stub must not write to stderr")
+func TestIngestCmd_InvalidPath_ReturnsUserError(t *testing.T) {
+	_, _, err := execute("ingest", "/nonexistent/path/xyz")
+	// Expect a user error (exit 1) — not a valid directory.
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not a valid directory")
 }
 
 // ── ask ─────────────────────────────────────────────────────────────────────

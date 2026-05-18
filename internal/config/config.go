@@ -53,6 +53,27 @@ type AppConfig struct {
 	Neo4jWriteBatchSize int
 }
 
+// LoadRaw reads configuration the same way as Load but skips full validation.
+// Use this when only a subset of stores is needed (e.g. ingest only needs Neo4j).
+func LoadRaw(cfgFile string) (*Config, error) {
+	v := viper.New()
+	setDefaults(v)
+	if cfgFile != "" {
+		v.SetConfigFile(cfgFile)
+	} else {
+		v.SetConfigName("config")
+		v.SetConfigType("yaml")
+		v.AddConfigPath(".")
+	}
+	if err := v.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			return nil, fmt.Errorf("config: read file: %w", err)
+		}
+	}
+	bindEnvVars(v)
+	return unmarshal(v), nil
+}
+
 // Load reads configuration in order of increasing precedence:
 // built-in defaults → cfgFile (or config.yaml) → environment variables.
 // Returns a validated Config or an error listing all violations.
