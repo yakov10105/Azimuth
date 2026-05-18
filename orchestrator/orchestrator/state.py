@@ -25,8 +25,10 @@ class AzimuthState(TypedDict):
     # Node 4 (historian) output — accumulated
     historical_context: Annotated[list[dict], operator.add]
 
-    # Final output
+    # Final output — set by synthesis node
     final_answer: Optional[str]
+    call_path: Optional[list[str]]
+    relevant_files: Optional[list[str]]
     diagram_mermaid: Optional[str]
 
     # Error routing — any node may set this; error_handler_node consumes it
