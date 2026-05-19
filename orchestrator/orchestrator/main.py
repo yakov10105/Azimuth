@@ -46,4 +46,6 @@ async def ask(request: AskRequest) -> AskResponse:
         summary=result.get("final_answer") or "",
         call_path=result.get("call_path") or [],
         relevant_files=result.get("relevant_files") or [],
+        entry_point_count=len(result.get("entry_points") or []),
+        graph_node_count=len(result.get("retrieved_nodes") or []),
     )

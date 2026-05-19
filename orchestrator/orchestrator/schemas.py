@@ -10,3 +10,5 @@ class AskResponse(BaseModel):
     summary: str
     call_path: list[str]
     relevant_files: list[str]
+    entry_point_count: int = 0
+    graph_node_count: int = 0

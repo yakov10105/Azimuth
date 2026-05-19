@@ -14,12 +14,16 @@ def _graph_result(
     summary: str = "PaymentHandler is in payments/handler.go",
     call_path: list[str] | None = None,
     relevant_files: list[str] | None = None,
+    entry_points: list[dict] | None = None,
+    retrieved_nodes: list[dict] | None = None,
     error: str | None = None,
 ) -> dict:
     result: dict = {
         "final_answer": summary,
         "call_path": call_path or ["HandlePayment (payments/handler.go:38)"],
         "relevant_files": relevant_files or ["payments/handler.go"],
+        "entry_points": entry_points or [{"fqn": "payments.HandlePayment"}],
+        "retrieved_nodes": retrieved_nodes or [{"fqn": "payments.HandlePayment"}, {"fqn": "main.RegisterRoutes"}],
     }
     if error:
         result["error"] = error
