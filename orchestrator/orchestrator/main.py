@@ -1,12 +1,10 @@
 import logging
-import logging.config
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from neo4j import AsyncGraphDatabase
-from neo4j.exceptions import ServiceUnavailable
 
-from .config import LOG_LEVEL, NEO4J_PASSWORD, NEO4J_URI, NEO4J_USER
+from .agent import graph
+from .config import LOG_LEVEL
 from .schemas import AskRequest, AskResponse
 
 logging.basicConfig(level=LOG_LEVEL)
@@ -30,18 +28,24 @@ async def healthz() -> dict:
 
 @app.post("/ask", response_model=AskResponse)
 async def ask(request: AskRequest) -> AskResponse:
-    driver = AsyncGraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-    try:
-        await driver.verify_connectivity()
-    except ServiceUnavailable as exc:
-        logger.error("Neo4j unreachable at %s: %s", NEO4J_URI, exc)
-        raise HTTPException(status_code=503, detail="Neo4j service unavailable") from exc
-    finally:
-        await driver.close()
+    result = await graph.ainvoke({
+        "raw_query": request.question,
+        "depth": request.depth,
+        # Initialise accumulated list fields so operator.add never receives None
+        "retrieved_nodes": [],
+        "retrieved_edges": [],
+        "code_snippets": [],
+        "historical_context": [],
+    })
 
-    # LangGraph pipeline wired in Task 1.5.6
+    if result.get("error"):
+        logger.error("graph pipeline error: %s", result["error"])
+        raise HTTPException(status_code=500, detail=result["error"])
+
     return AskResponse(
-        summary="not yet implemented",
-        call_path=[],
-        relevant_files=[],
+        summary=result.get("final_answer") or "",
+        call_path=result.get("call_path") or [],
+        relevant_files=result.get("relevant_files") or [],
+        entry_point_count=len(result.get("entry_points") or []),
+        graph_node_count=len(result.get("retrieved_nodes") or []),
     )

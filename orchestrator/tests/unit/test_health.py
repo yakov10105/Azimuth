@@ -1,11 +1,38 @@
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch
 
 from orchestrator.main import app
 
 client = TestClient(app)
 
+GRAPH_MODULE = "orchestrator.main.graph"
+
+
+def _graph_result(
+    summary: str = "PaymentHandler is in payments/handler.go",
+    call_path: list[str] | None = None,
+    relevant_files: list[str] | None = None,
+    entry_points: list[dict] | None = None,
+    retrieved_nodes: list[dict] | None = None,
+    error: str | None = None,
+) -> dict:
+    result: dict = {
+        "final_answer": summary,
+        "call_path": call_path or ["HandlePayment (payments/handler.go:38)"],
+        "relevant_files": relevant_files or ["payments/handler.go"],
+        "entry_points": entry_points or [{"fqn": "payments.HandlePayment"}],
+        "retrieved_nodes": retrieved_nodes or [{"fqn": "payments.HandlePayment"}, {"fqn": "main.RegisterRoutes"}],
+    }
+    if error:
+        result["error"] = error
+    return result
+
+
+# ---------------------------------------------------------------------------
+# /healthz
+# ---------------------------------------------------------------------------
 
 def test_healthz_returns_ok():
     response = client.get("/healthz")
@@ -13,46 +40,66 @@ def test_healthz_returns_ok():
     assert response.json() == {"status": "ok"}
 
 
-def test_ask_returns_503_when_neo4j_unreachable():
-    from neo4j.exceptions import ServiceUnavailable
+# ---------------------------------------------------------------------------
+# POST /ask — happy path
+# ---------------------------------------------------------------------------
 
-    with patch("orchestrator.main.AsyncGraphDatabase.driver") as mock_driver_cls:
-        mock_driver = AsyncMock()
-        mock_driver.verify_connectivity.side_effect = ServiceUnavailable("connection refused")
-        mock_driver.close = AsyncMock()
-        mock_driver_cls.return_value = mock_driver
-
-        response = client.post("/ask", json={"question": "Where is the payment handler?"})
-
-    assert response.status_code == 503
-    assert "Neo4j" in response.json()["detail"]
-
-
-def test_ask_stub_returns_not_yet_implemented():
-    with patch("orchestrator.main.AsyncGraphDatabase.driver") as mock_driver_cls:
-        mock_driver = AsyncMock()
-        mock_driver.verify_connectivity = AsyncMock(return_value=None)
-        mock_driver.close = AsyncMock()
-        mock_driver_cls.return_value = mock_driver
-
+def test_ask_returns_answer():
+    with patch(GRAPH_MODULE) as mock_graph:
+        mock_graph.ainvoke = AsyncMock(return_value=_graph_result())
         response = client.post("/ask", json={"question": "Where is the payment handler?"})
 
     assert response.status_code == 200
     body = response.json()
-    assert body["summary"] == "not yet implemented"
-    assert body["call_path"] == []
-    assert body["relevant_files"] == []
+    assert body["summary"] == "PaymentHandler is in payments/handler.go"
+    assert body["call_path"] == ["HandlePayment (payments/handler.go:38)"]
+    assert body["relevant_files"] == ["payments/handler.go"]
 
+
+def test_ask_passes_question_and_depth_to_graph():
+    with patch(GRAPH_MODULE) as mock_graph:
+        mock_graph.ainvoke = AsyncMock(return_value=_graph_result())
+        client.post("/ask", json={"question": "How does retry work?", "depth": 5})
+
+    call_kwargs = mock_graph.ainvoke.call_args[0][0]
+    assert call_kwargs["raw_query"] == "How does retry work?"
+    assert call_kwargs["depth"] == 5
+
+
+def test_ask_initialises_accumulated_lists_empty():
+    with patch(GRAPH_MODULE) as mock_graph:
+        mock_graph.ainvoke = AsyncMock(return_value=_graph_result())
+        client.post("/ask", json={"question": "test"})
+
+    initial_state = mock_graph.ainvoke.call_args[0][0]
+    assert initial_state["retrieved_nodes"] == []
+    assert initial_state["retrieved_edges"] == []
+    assert initial_state["code_snippets"] == []
+    assert initial_state["historical_context"] == []
+
+
+# ---------------------------------------------------------------------------
+# POST /ask — error cases
+# ---------------------------------------------------------------------------
+
+def test_ask_returns_500_on_graph_error():
+    with patch(GRAPH_MODULE) as mock_graph:
+        mock_graph.ainvoke = AsyncMock(
+            return_value=_graph_result(error="Neo4j unreachable: connection refused")
+        )
+        response = client.post("/ask", json={"question": "test"})
+
+    assert response.status_code == 500
+    assert "Neo4j" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Validation
+# ---------------------------------------------------------------------------
 
 def test_ask_validates_depth_bounds():
-    with patch("orchestrator.main.AsyncGraphDatabase.driver") as mock_driver_cls:
-        mock_driver = AsyncMock()
-        mock_driver.verify_connectivity = AsyncMock(return_value=None)
-        mock_driver.close = AsyncMock()
-        mock_driver_cls.return_value = mock_driver
-
-        # depth=0 is below minimum of 1
-        response = client.post("/ask", json={"question": "test", "depth": 0})
+    # depth=0 is below minimum of 1
+    response = client.post("/ask", json={"question": "test", "depth": 0})
     assert response.status_code == 422
 
     # depth=11 is above maximum of 10

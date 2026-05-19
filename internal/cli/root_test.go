@@ -99,11 +99,14 @@ func TestAskCmd_TooManyArgs_ReturnsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestAskCmd_StubOutput_ToStdout(t *testing.T) {
+func TestAskCmd_OutputToStdout(t *testing.T) {
+	srv := mockOrchestratorServer(t, paymentHandlerResp)
+	t.Setenv("ORCHESTRATOR_URL", srv.URL)
+
 	stdout, stderr, err := execute("ask", "Where is the payment handler?")
 	require.NoError(t, err)
-	assert.Contains(t, stdout, "not yet implemented")
-	assert.Empty(t, stderr, "stub must not write to stderr")
+	assert.NotEmpty(t, stdout, "answer must go to stdout")
+	assert.Empty(t, stderr, "no errors expected")
 }
 
 // ── status ───────────────────────────────────────────────────────────────────

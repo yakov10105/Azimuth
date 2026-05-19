@@ -26,6 +26,9 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "integration: mark test as requiring live infrastructure (neo4j, anthropic api key)",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["orchestrator"]
